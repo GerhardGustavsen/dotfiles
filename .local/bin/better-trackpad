@@ -1,0 +1,10 @@
+#!/bin/sh
+
+#find toutchpad id:
+id=$(xinput --list | grep "Elan Touchpad" | cut -d '=' -f 2 | cut -d '[' -f 1)
+
+# disable midde click & right click on tutchpad:
+exec sudo xinput set-button-map $id 1 1 1 4 5 6 7 &
+
+# uncomment to temporary learn trackpoint:
+# exec sudo xinput disable $id &

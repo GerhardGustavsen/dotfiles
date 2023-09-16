@@ -1,0 +1,43 @@
+#! /bin/bash
+
+set -eu
+
+# dependency check
+if ! [[ "$(which notify-send)" =~ (notify-send) ]]; then
+    echo "Please install libnotify to use this script.\n"
+    echo "   sudo pacman -S libnotify"
+    exit 1
+fi
+if ! [[ "$(which acpi)" =~ (acpi) ]]; then
+    echo "Please install acpi to use this script.\n"
+    echo "   sudo pacman -S acpi"
+    exit 1
+fi
+
+# check interval (seconds)
+INTERVAL=30
+MIN_BAT=15
+MIN_BAT2=10
+ICON="/usr/share/icons/Adwaita/48x48/status/battery-level-20-charging-symbolic.symbolic.png"
+
+get_plugged_state(){
+    echo $(acpi|grep -Po "Charging"| head -n 1)
+}
+
+get_bat_percent(){
+    echo $(acpi|grep -Po "[0-9]+(?=%)"| head -n 1)
+}
+
+# loop
+while true ; do
+	if [[ $(get_plugged_state) != "Charging" ]]; then # plugged
+		if [ $(get_bat_percent) -le ${MIN_BAT} ]; then # Battery under low limit
+			dunstify -u critical -i "$ICON" -a "Warning: " -t 8000 "Battery below ${MIN_BAT}%!"
+			if [ $(get_bat_percent) -le ${MIN_BAT2} ]; then
+            			(pactl set-sink-volume 0 70% &)
+				(paplay /usr/share/sounds/freedesktop/stereo/suspend-error.oga &)
+			fi
+	    	fi
+	fi
+	sleep ${INTERVAL} # Repeat every $INTERVAL seconds
+done
